@@ -1,4 +1,4 @@
-import { StorageSchema, Customer, Job, BusinessProfile, Estimate, EstimateTemplate, EstimateAssembly } from '@/domain/types';
+import { StorageSchema, Customer, Job, BusinessProfile, Estimate, EstimateTemplate, EstimateAssembly, Invoice, Payment, SavedView } from '@/domain/types';
 import { seedData } from './seedData';
 
 const STORAGE_KEY = 'allens_contractors_data';
@@ -11,10 +11,21 @@ const DEFAULT_DATA: StorageSchema = {
   estimateAssemblies: [],
   expenses: [],
   invoices: [],
+  payments: [],
+  materials: [],
+  laborEntries: [],
+  changeOrders: [],
+  jobNotes: [],
+  jobProgress: [],
+  savedViews: [],
+  viewedItems: [],
+  onboardingCompleted: false,
   settings: {
     businessName: "Allen's Contractor's",
     taxRate: 0,
     laborRate: 0,
+    defaultLaborMarkup: 20,
+    defaultMaterialMarkup: 15,
     licenseNumber: '',
     address: '',
     phone: '',
@@ -40,6 +51,17 @@ export const storageService = {
         estimates: parsed.estimates || [],
         estimateTemplates: parsed.estimateTemplates || [],
         estimateAssemblies: parsed.estimateAssemblies || [],
+        materials: parsed.materials || [],
+        laborEntries: parsed.laborEntries || [],
+        changeOrders: parsed.changeOrders || [],
+        jobNotes: parsed.jobNotes || [],
+        jobProgress: parsed.jobProgress || [],
+        expenses: parsed.expenses || [],
+        invoices: parsed.invoices || [],
+        payments: parsed.payments || [],
+        savedViews: parsed.savedViews || [],
+        viewedItems: parsed.viewedItems || [],
+        onboardingCompleted: parsed.onboardingCompleted ?? false,
       };
     } catch (e) {
       console.error('Failed to parse storage data', e);
@@ -120,5 +142,71 @@ export const storageService = {
     const customer = this.getItem('customers', estimate.customerId) as Customer;
     const job = estimate.jobId ? this.getItem('jobs', estimate.jobId) as Job : null;
     return { ...estimate, customer, job };
+  },
+
+  getInvoicesByJob(jobId: string) {
+    const invoices = this.getCollection('invoices') as Invoice[];
+    return invoices.filter(i => i.jobId === jobId);
+  },
+
+  getInvoicesByCustomer(customerId: string) {
+    const invoices = this.getCollection('invoices') as Invoice[];
+    return invoices.filter(i => i.customerId === customerId);
+  },
+
+  getPaymentsByInvoice(invoiceId: string) {
+    const payments = this.getCollection('payments') as Payment[];
+    return payments.filter(p => p.invoiceId === invoiceId);
+  },
+
+  getInvoiceWithContext(invoiceId: string) {
+    const invoice = this.getItem('invoices', invoiceId) as Invoice;
+    if (!invoice) return null;
+    const customer = this.getItem('customers', invoice.customerId) as Customer;
+    const job = invoice.jobId ? this.getItem('jobs', invoice.jobId) as Job : null;
+    const payments = this.getPaymentsByInvoice(invoiceId);
+    return { ...invoice, customer, job, payments };
+  },
+
+  getSavedViews(page?: string) {
+    const views = this.getCollection('savedViews') as any[];
+    return page ? views.filter(v => v.page === page) : views;
+  },
+
+  saveSavedView(view: Omit<SavedView, 'id' | 'createdAt' | 'updatedAt'>) {
+    const newView: SavedView = {
+      ...view,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    return this.saveItem('savedViews', newView);
+  },
+
+  deleteSavedView(id: string) {
+    this.removeItem('savedViews', id);
+  },
+
+  getViewedItems(limit = 10) {
+    const items = this.getData().viewedItems || [];
+    return items.sort((a, b) => new Date(b.viewedAt).getTime() - new Date(a.viewedAt).getTime()).slice(0, limit);
+  },
+
+  addViewedItem(item: { id: string; type: string; name: string; url: string }) {
+    const data = this.getData();
+    const existing = data.viewedItems || [];
+    const filtered = existing.filter(i => !(i.id === item.id && i.type === item.type));
+    data.viewedItems = [{ ...item, viewedAt: new Date().toISOString() }, ...filtered].slice(0, 20);
+    this.saveData(data);
+  },
+
+  getOnboardingCompleted() {
+    return this.getData().onboardingCompleted;
+  },
+
+  setOnboardingCompleted(completed: boolean) {
+    const data = this.getData();
+    data.onboardingCompleted = completed;
+    this.saveData(data);
   }
 };

@@ -1,10 +1,15 @@
 import { StorageSchema } from '@/domain/types';
 import { v4 as uuidv4 } from 'uuid';
 
+const customerId1 = uuidv4();
+const customerId2 = uuidv4();
+const customerId3 = uuidv4();
+const jobId1 = uuidv4();
+
 export const seedData: StorageSchema = {
   customers: [
     {
-      id: uuidv4(),
+      id: customerId1,
       name: 'Michael Scott',
       companyName: 'Dunder Mifflin Paper Co.',
       email: 'michael.scott@dundermifflin.com',
@@ -16,7 +21,7 @@ export const seedData: StorageSchema = {
       updatedAt: new Date().toISOString()
     },
     {
-      id: uuidv4(),
+      id: customerId2,
       name: 'Pam Beesly',
       companyName: 'Beesly Designs',
       email: 'pam.b@office.com',
@@ -28,7 +33,7 @@ export const seedData: StorageSchema = {
       updatedAt: new Date().toISOString()
     },
     {
-      id: uuidv4(),
+      id: customerId3,
       name: 'Dwight Schrute',
       companyName: 'Schrute Farms',
       email: 'dwight@schrute-farms.com',
@@ -42,8 +47,8 @@ export const seedData: StorageSchema = {
   ],
   jobs: [
     {
-      id: uuidv4(),
-      customerId: '', // Placeholder
+      id: jobId1,
+      customerId: customerId1,
       title: 'Kitchen Remodel',
       siteAddress: '123 Main St',
       type: 'remodel',
@@ -60,6 +65,15 @@ export const seedData: StorageSchema = {
   estimateAssemblies: [],
   expenses: [],
   invoices: [],
+  payments: [],
+  materials: [],
+  laborEntries: [],
+  changeOrders: [],
+  jobNotes: [],
+  jobProgress: [],
+  savedViews: [],
+  viewedItems: [],
+  onboardingCompleted: false,
   settings: {
     businessName: "Allen's Contractor's",
     address: "742 Evergreen Terrace, Springfield",
@@ -68,6 +82,8 @@ export const seedData: StorageSchema = {
     licenseNumber: "GC-882299",
     taxRate: 0.08,
     laborRate: 75,
+    defaultLaborMarkup: 20,
+    defaultMaterialMarkup: 25,
     footerNotes: "Thank you for your business! All quotes are valid for 30 days."
   }
 };

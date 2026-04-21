@@ -10,12 +10,17 @@ import {
   Clock,
   MapPin,
   Calendar,
-  ChevronRight
+  ChevronRight,
+  FileText,
+  Receipt,
+  BarChart3
 } from 'lucide-react';
 import { storageService } from '@/lib/storage/storageService';
 import { useEffect, useState } from 'react';
 import { Job, Customer, BusinessProfile } from '@/domain/types';
 import Link from 'next/link';
+import { reportService } from '@/lib/reports/reportService';
+import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 
 export default function Dashboard() {
   const [data, setData] = useState<{
@@ -30,7 +35,12 @@ export default function Dashboard() {
       customers: storageService.getCustomers(),
       settings: storageService.getSettings()
     });
+    setBusinessHealth(reportService.getBusinessKPIs());
+    setRecentTrends(reportService.getFinancialTrends(6));
   }, []);
+
+  const [businessHealth, setBusinessHealth] = useState<any>(null);
+  const [recentTrends, setRecentTrends] = useState<any[]>([]);
 
   if (!data) return null;
 
@@ -39,8 +49,8 @@ export default function Dashboard() {
   const kpis = [
     { label: 'Network', title: 'Customers', value: customers.length, icon: Users, color: 'var(--primary)' },
     { label: 'Active', title: 'Projects', value: jobs.filter(j => j.status === 'in progress').length, icon: Briefcase, color: 'var(--success)' },
-    { label: 'Pipeline', title: 'Leads', value: jobs.filter(j => j.status === 'lead').length, icon: AlertCircle, color: 'var(--info)' },
-    { label: 'Financial', title: 'Revenue Target', value: `$${(jobs.reduce((acc, job) => acc + job.contractAmount, 0) / 1000).toFixed(1)}k`, icon: TrendingUp, color: 'var(--warning)' },
+    { label: 'Profit', title: 'Gross Profit', value: businessHealth ? `$${(businessHealth.grossProfit / 1000).toFixed(1)}k` : '...', icon: TrendingUp, color: 'var(--info)' },
+    { label: 'Efficiency', title: 'Avg Margin', value: businessHealth ? `${businessHealth.avgMargin}%` : '...', icon: ArrowUpRight, color: 'var(--warning)' },
   ];
 
   const recentJobs = [...jobs].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5);
@@ -139,14 +149,24 @@ export default function Dashboard() {
                   Create Project
                 </Button>
               </Link>
-              <Button variant="ghost" className="text-xs text-[var(--text-muted)] h-10" disabled>
-                <Plus className="mr-2 h-3 w-3" />
-                New Estimate
-              </Button>
-              <Button variant="ghost" className="text-xs text-[var(--text-muted)] h-10" disabled>
-                <Plus className="mr-2 h-3 w-3" />
-                New Invoice
-              </Button>
+              <Link href="/estimates/new" className="col-span-2">
+                <Button variant="outline" className="w-full justify-start h-12">
+                  <FileText className="mr-3 h-4 w-4 text-[var(--primary)]" />
+                  New Estimate
+                </Button>
+              </Link>
+              <Link href="/invoices/new" className="col-span-2">
+                <Button variant="outline" className="w-full justify-start h-12">
+                  <Receipt className="mr-3 h-4 w-4 text-[var(--primary)]" />
+                  New Invoice
+                </Button>
+              </Link>
+              <Link href="/reports" className="col-span-2">
+                <Button variant="outline" className="w-full justify-start h-12 bg-indigo-50 border-indigo-100 hover:bg-indigo-100 transition-colors">
+                  <BarChart3 className="mr-3 h-4 w-4 text-indigo-600" />
+                  Business Reports
+                </Button>
+              </Link>
             </div>
           </Card>
 

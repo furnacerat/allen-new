@@ -1,9 +1,11 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { storageService } from '@/lib/storage/storageService';
+import { api } from '@/lib/api';
 import { Estimate, Customer, BusinessProfile } from '@/domain/types';
-import { LogoPlaceholder } from '@/components/ui/LogoPlaceholder';
+import { PrintLayout } from '@/components/layout/PrintLayout';
+import { Button } from '@/components/ui';
+import { Printer } from 'lucide-react';
 
 export default function EstimatePrintPage() {
   const { id } = useParams();
@@ -12,60 +14,33 @@ export default function EstimatePrintPage() {
 
   useEffect(() => {
     if (id) {
-      const data = storageService.getEstimateWithContext(id as string);
-      if (data) setEstimate(data);
-      setProfile(storageService.getSettings());
+      Promise.all([
+        api.estimates.getWithContext(id as string),
+        api.settings.get()
+      ]).then(([data, settings]) => {
+        if (data && settings) {
+          setEstimate(data);
+          setProfile(settings);
+          
+          setTimeout(() => {
+            // window.print();
+          }, 1000);
+        }
+      });
     }
   }, [id]);
-
-  useEffect(() => {
-    if (estimate && profile) {
-      // Auto-trigger print dialog after a short delay to ensure rendering
-      const timer = setTimeout(() => {
-        window.print();
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [estimate, profile]);
 
   if (!estimate || !profile) return <div className="p-10 text-center">Loading estimate document...</div>;
 
   return (
-    <div className="bg-white min-h-screen p-0 md:p-10 text-black">
-      {/* Print Controls (Hidden on Print) */}
-      <div className="mb-8 flex justify-center print:hidden">
-         <button 
-           onClick={() => window.print()}
-           className="bg-[var(--primary)] text-white px-6 py-2 rounded-lg font-bold shadow-lg hover:opacity-90 transition-all"
-         >
-           Print Document
-         </button>
-      </div>
-
-      <div className="max-w-[800px] mx-auto border border-gray-100 p-8 md:p-12 shadow-sm print:border-0 print:shadow-none print:p-0">
-        {/* Header */}
-        <div className="flex justify-between items-start mb-12">
-          <div className="space-y-4">
-            <LogoPlaceholder name={profile.businessName} size="xl" className="rounded-xl" />
-            <div>
-              <h1 className="text-2xl font-black uppercase tracking-tight">{profile.businessName}</h1>
-              <div className="text-sm text-gray-500 space-y-0.5">
-                <p>{profile.address}</p>
-                <p>{profile.phone} | {profile.email}</p>
-                {profile.licenseNumber && <p>License: {profile.licenseNumber}</p>}
-              </div>
-            </div>
-          </div>
-          <div className="text-right">
-            <h2 className="text-4xl font-light text-gray-400 mb-2">ESTIMATE</h2>
-            <div className="text-sm space-y-1">
-              <p><span className="font-bold">Number:</span> #{estimate.estimateNumber}</p>
-              <p><span className="font-bold">Date:</span> {new Date(estimate.issueDate).toLocaleDateString()}</p>
-              {estimate.expiryDate && <p><span className="font-bold">Expires:</span> {new Date(estimate.expiryDate).toLocaleDateString()}</p>}
-            </div>
-          </div>
-        </div>
-
+    <>
+      <PrintLayout
+        business={profile}
+        documentTitle="Estimate"
+        documentId={estimate.estimateNumber}
+        referenceDate={estimate.issueDate}
+        footerNotesOverride={estimate.termsConditions || profile.footerNotes || "All quotes are valid for 30 days. Work will begin once the deposit is received."}
+      >
         <div className="grid grid-cols-2 gap-12 mb-12 pb-8 border-b border-gray-100">
           <div>
             <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Estimate For</h3>
@@ -133,26 +108,24 @@ export default function EstimatePrintPage() {
           </div>
         </div>
 
-        {/* Footer Notes */}
-        <div className="grid grid-cols-1 gap-8 pt-12 border-t border-gray-100">
-          {estimate.customerNotes && (
-            <div>
-              <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Notes</h3>
-              <p className="text-xs text-gray-500 leading-relaxed whitespace-pre-wrap">{estimate.customerNotes}</p>
-            </div>
-          )}
-          <div>
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Terms & Conditions</h3>
-            <p className="text-[10px] text-gray-400 leading-relaxed whitespace-pre-wrap italic">
-              {estimate.termsConditions || profile.footerNotes || "All quotes are valid for 30 days. Work will begin once the deposit is received."}
-            </p>
+        {estimate.customerNotes && (
+          <div className="mb-4">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Internal Notes</h3>
+            <p className="text-xs text-gray-500 leading-relaxed whitespace-pre-wrap">{estimate.customerNotes}</p>
           </div>
-        </div>
-        
-        <div className="mt-20 text-center text-[10px] text-gray-300 font-medium uppercase tracking-widest">
-           Generated by Allen's Contractor's Platform
-        </div>
+        )}
+      </PrintLayout>
+      
+      {/* Print Controls (Hidden on Print) */}
+      <div className="fixed bottom-8 right-8 print:hidden flex gap-3 z-50">
+         <Button variant="outline" onClick={() => window.close()} className="bg-white">
+            Close Preview
+         </Button>
+         <Button onClick={() => window.print()} className="shadow-2xl">
+            <Printer className="mr-2 h-4 w-4" />
+            Start Printing
+         </Button>
       </div>
-    </div>
+    </>
   );
 }

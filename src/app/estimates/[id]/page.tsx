@@ -27,7 +27,8 @@ import {
   Job, 
   EstimateLineItem, 
   LineItemType,
-  EstimateStatus
+  EstimateStatus,
+  Invoice
 } from '@/domain/types';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/context/ToastContext';
@@ -39,13 +40,17 @@ export default function EstimateBuilderPage() {
   const { showToast } = useToast();
   
   const [estimate, setEstimate] = useState<(Estimate & { customer?: Customer; job?: Job | null }) | null>(null);
+  const [customerJobs, setCustomerJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
        const data = storageService.getEstimateWithContext(id as string);
-       if (data) setEstimate(data);
+       if (data) {
+          setEstimate(data);
+          setCustomerJobs(storageService.getJobsByCustomer(data.customerId));
+       }
     }
   }, [id]);
 
@@ -63,6 +68,7 @@ export default function EstimateBuilderPage() {
   };
 
   const handleAddItem = () => {
+    const profile = storageService.getSettings();
     const newItem: EstimateLineItem = {
       id: uuidv4(),
       name: '',
@@ -71,7 +77,7 @@ export default function EstimateBuilderPage() {
       quantity: 1,
       unit: 'ea',
       unitCost: 0,
-      markup: 20,
+      markup: profile.defaultMaterialMarkup || 20,
       taxable: true,
       total: 0
     };
@@ -81,9 +87,20 @@ export default function EstimateBuilderPage() {
   };
 
   const handleUpdateItem = (itemId: string, updates: Partial<EstimateLineItem>) => {
-    const updatedItems = estimate?.items.map(item => 
-      item.id === itemId ? { ...item, ...updates } : item
-    ) || [];
+    const profile = storageService.getSettings();
+    const updatedItems = estimate?.items.map(item => {
+      if (item.id === itemId) {
+        const newItem = { ...item, ...updates };
+        // If type changed and markup wasn't manually touched in this update
+        if (updates.type && !updates.markup) {
+           if (updates.type === 'labor') newItem.markup = profile.defaultLaborMarkup || 20;
+           if (updates.type === 'material') newItem.markup = profile.defaultMaterialMarkup || 15;
+        }
+        return newItem;
+      }
+      return item;
+    }) || [];
+    
     const { subtotal, taxTotal, total } = calculateTotals(updatedItems);
     updateEstimate({ items: updatedItems, subtotal, taxTotal, total });
   };
@@ -164,7 +181,6 @@ export default function EstimateBuilderPage() {
     showToast('Converted to Job successfully!', 'success');
     router.push(`/jobs/${jobId}`);
   };
-
   const handleSaveTemplate = () => {
     if (!estimate) return;
     const templateName = prompt('Enter a name for this template:', `Template: ${estimate.scopeSummary?.slice(0, 20) || estimate.estimateNumber}`);
@@ -182,6 +198,47 @@ export default function EstimateBuilderPage() {
     storageService.saveItem('estimateTemplates', newTemplate);
     showToast('Estimate saved as reusable template!', 'success');
   };
+
+  const handleConvertToInvoice = () => {
+    if (!estimate) return;
+    
+    // Create new invoice from estimate
+    const newInvoice: Invoice = {
+      id: uuidv4(),
+      invoiceNumber: `INV-${Math.floor(1000 + Math.random() * 9000)}`,
+      customerId: estimate.customerId,
+      jobId: estimate.jobId,
+      estimateId: estimate.id,
+      status: 'draft',
+      issueDate: new Date().toISOString().split('T')[0],
+      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 14 days default
+      items: estimate.items.map(item => ({
+        id: uuidv4(),
+        name: item.name,
+        description: item.description,
+        quantity: item.quantity,
+        unit: item.unit,
+        unitPrice: item.unitCost * (1 + item.markup / 100),
+        taxable: item.taxable,
+        total: item.total
+      })),
+      subtotal: estimate.subtotal,
+      taxRate: estimate.taxRate,
+      taxTotal: estimate.taxTotal,
+      total: estimate.total,
+      balanceDue: estimate.total,
+      customerNotes: estimate.customerNotes,
+      internalNotes: `Generated from estimate ${estimate.estimateNumber}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    storageService.saveItem('invoices', newInvoice);
+    
+    // Optional: mark estimate as converted or add a link
+    showToast('Invoice generated successfully!', 'success');
+    router.push(`/invoices/${newInvoice.id}`);
+  };
    
   if (!estimate) return null;
 
@@ -196,8 +253,14 @@ export default function EstimateBuilderPage() {
             <ChevronLeft size={16} className="mr-1" />
             Back to Estimates
           </Link>
-          <div className="flex items-center gap-4">
-             <h1 className="text-3xl font-bold tracking-tight">Estimate #{estimate.estimateNumber}</h1>
+          <div className="flex items-center gap-2">
+             <span className="text-3xl font-bold tracking-tight text-[var(--primary)]">#</span>
+             <input 
+                className="text-3xl font-bold tracking-tight bg-transparent border-none focus:ring-0 w-48 p-0"
+                value={estimate.estimateNumber}
+                onChange={(e) => updateEstimate({ estimateNumber: e.target.value })}
+                placeholder="Number..."
+             />
              <Badge variant={getStatusVariant(estimate.status)}>{estimate.status}</Badge>
           </div>
           <div className="flex flex-wrap gap-4 text-sm text-[var(--text-muted)]">
@@ -205,15 +268,26 @@ export default function EstimateBuilderPage() {
                 <User size={14} className="text-[var(--primary)]" />
                 <span>{estimate.customer?.name}</span>
              </div>
-             {estimate.job && (
-               <div className="flex items-center gap-1.5">
-                  <Briefcase size={14} className="text-[var(--primary)]" />
-                  <span>{estimate.job.title}</span>
-               </div>
-             )}
+             <div className="flex items-center gap-1.5 border-l border-[var(--border-subtle)] pl-4">
+                <Briefcase size={14} className="text-[var(--primary)]" />
+                <select 
+                  className="bg-transparent border-none text-xs font-semibold focus:ring-0 cursor-pointer p-0 h-auto"
+                  value={estimate.jobId || ''}
+                  onChange={(e) => updateEstimate({ jobId: e.target.value || undefined })}
+                >
+                  <option value="">No Linked Project (Lead)</option>
+                  {customerJobs.map(j => (
+                    <option key={j.id} value={j.id}>{j.title}</option>
+                  ))}
+                </select>
+             </div>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+           <Button variant="outline" size="sm" onClick={handleConvertToInvoice}>
+              <FileText className="mr-2 h-4 w-4" />
+              Create Invoice
+           </Button>
            <Button variant="outline" size="sm" onClick={handleSaveTemplate}>
               <Copy className="mr-2 h-4 w-4" />
               Save as Template

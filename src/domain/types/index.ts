@@ -9,6 +9,7 @@ export type JobType =
   | 'waterproofing' | 'cabinetry' | 'tile' | 'other';
 
 export type EstimateStatus = 'draft' | 'sent' | 'approved' | 'rejected' | 'converted';
+export type InvoiceStatus = 'draft' | 'sent' | 'partial' | 'paid' | 'overdue' | 'void';
 
 export type LineItemType = 'labor' | 'material' | 'subcontractor' | 'equipment' | 'misc';
 
@@ -104,7 +105,20 @@ export interface BusinessProfile {
   licenseNumber?: string;
   taxRate: number;
   laborRate: number;
+  defaultLaborMarkup: number; // percentage
+  defaultMaterialMarkup: number; // percentage
   footerNotes?: string;
+}
+
+export interface SavedView {
+  id: string;
+  name: string;
+  page: 'customers' | 'jobs' | 'invoices' | 'estimates';
+  filters: Record<string, any>;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface StorageSchema {
@@ -114,6 +128,135 @@ export interface StorageSchema {
   estimateTemplates: EstimateTemplate[];
   estimateAssemblies: EstimateAssembly[];
   settings: BusinessProfile;
-  expenses: any[];
-  invoices: any[];
+  expenses: JobExpense[];
+  invoices: Invoice[];
+  payments: Payment[];
+  materials: ProjectMaterial[];
+  laborEntries: LaborEntry[];
+  changeOrders: ChangeOrder[];
+  jobNotes: JobNote[];
+  jobProgress: JobProgress[];
+  savedViews: SavedView[];
+  viewedItems: { id: string; type: string; name: string; url: string; viewedAt: string }[];
+  onboardingCompleted: boolean;
+}
+
+export interface ProjectMaterial {
+  id: string;
+  jobId: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  estimatedCost: number;
+  actualCost: number;
+  status: 'needed' | 'ordered' | 'purchased' | 'received';
+  vendor?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LaborEntry {
+  id: string;
+  jobId: string;
+  date: string;
+  workerName: string;
+  laborType: string;
+  hours: number;
+  hourlyCost: number;
+  billableRate?: number;
+  totalCost: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JobExpense {
+  id: string;
+  jobId: string;
+  date: string;
+  category: 'subcontractor' | 'equipment' | 'material' | 'permit' | 'other';
+  vendor: string;
+  amount: number;
+  paymentMethod?: string;
+  receiptPlaceholder?: string; // For URL
+  receiptPhoto?: string; // For Base64 or local path
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChangeOrder {
+  id: string;
+  jobId: string;
+  title: string;
+  description: string;
+  amountChange: number;
+  status: 'pending' | 'approved' | 'rejected' | 'void';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JobNote {
+  id: string;
+  jobId: string;
+  content: string;
+  author: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JobProgress {
+  id: string;
+  jobId: string;
+  date: string;
+  content: string;
+  statusUpdate?: JobStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InvoiceLineItem {
+  id: string;
+  name: string;
+  description?: string;
+  quantity: number;
+  unit: string;
+  unitPrice: number;
+  taxable: boolean;
+  total: number;
+}
+
+export interface Payment {
+  id: string;
+  invoiceId: string;
+  jobId?: string;
+  customerId: string;
+  amount: number;
+  date: string;
+  method: 'cash' | 'check' | 'credit_card' | 'bank_transfer' | 'other';
+  referenceNumber?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Invoice {
+  id: string;
+  invoiceNumber: string; // e.g. INV-1001
+  customerId: string;
+  jobId?: string;
+  estimateId?: string;
+  status: InvoiceStatus;
+  issueDate: string;
+  dueDate: string;
+  items: InvoiceLineItem[];
+  subtotal: number;
+  taxRate: number;
+  taxTotal: number;
+  total: number;
+  balanceDue: number;
+  customerNotes?: string;
+  internalNotes?: string;
+  createdAt: string;
+  updatedAt: string;
 }

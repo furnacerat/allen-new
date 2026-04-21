@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Card, Button, Badge } from '@/components/ui';
+import { Card, Button, Badge, ListSkeleton } from '@/components/ui';
 import { 
   Briefcase, 
   Search, 
@@ -19,6 +19,7 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<(Job & { customerName?: string })[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const allJobs = storageService.getJobs();
@@ -30,6 +31,7 @@ export default function JobsPage() {
     }));
     
     setJobs(enrichedJobs);
+    setIsLoading(false);
   }, []);
 
   const filteredJobs = jobs.filter(j => {
@@ -52,7 +54,22 @@ export default function JobsPage() {
     }
   };
 
+  if (isLoading) {
   return (
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex justify-between">
+        <div className="space-y-2">
+          <div className="h-9 w-48 bg-[var(--border-subtle)] rounded animate-pulse" />
+          <div className="h-5 w-72 bg-[var(--border-subtle)] rounded animate-pulse" />
+        </div>
+      </div>
+      <div className="h-12 bg-[var(--border-subtle)] rounded animate-pulse" />
+      <ListSkeleton count={4} />
+    </div>
+  );
+}
+
+return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

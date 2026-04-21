@@ -1,14 +1,16 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Card, Button, Badge } from '@/components/ui';
+import { Card, Button, Badge, ListSkeleton } from '@/components/ui';
 import { 
   Users, 
-  Search, 
   Plus, 
-  MoreVertical, 
-  Phone, 
+  Search, 
+  Filter, 
+  ChevronRight,
   Mail,
+  Phone,
   MapPin,
+  MoreVertical,
   ExternalLink
 } from 'lucide-react';
 import Link from 'next/link';
@@ -18,9 +20,12 @@ import { Customer } from '@/domain/types';
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setCustomers(storageService.getCustomers());
+    setIsLoading(false);
   }, []);
 
   const filteredCustomers = customers.filter(c => 
@@ -28,6 +33,21 @@ export default function CustomersPage() {
     (c.email?.toLowerCase().includes(searchQuery.toLowerCase())) ||
     (c.companyName?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="flex justify-between">
+          <div className="space-y-2">
+            <div className="h-9 w-40 bg-[var(--border-subtle)] rounded animate-pulse" />
+            <div className="h-5 w-56 bg-[var(--border-subtle)] rounded animate-pulse" />
+          </div>
+        </div>
+        <div className="h-12 bg-[var(--border-subtle)] rounded animate-pulse" />
+        <ListSkeleton count={4} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
