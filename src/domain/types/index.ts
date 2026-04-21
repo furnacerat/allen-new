@@ -121,6 +121,23 @@ export interface SavedView {
   updatedAt: string;
 }
 
+export type PricingCategory = 'material' | 'labor' | 'equipment' | 'subcontractor' | 'misc';
+
+export interface PricingItem {
+  id: string;
+  name: string;
+  description?: string;
+  category: PricingCategory;
+  unit: string; // e.g., 'hr', 'sqft', 'each', 'linear ft', 'gallon', 'day'
+  unitCost: number; // your cost
+  sellPrice: number; // price to customer
+  markup: number; // percentage
+  isActive: boolean;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface StorageSchema {
   customers: Customer[];
   jobs: Job[];
@@ -137,6 +154,7 @@ export interface StorageSchema {
   jobNotes: JobNote[];
   jobProgress: JobProgress[];
   savedViews: SavedView[];
+  pricing: PricingItem[];
   viewedItems: { id: string; type: string; name: string; url: string; viewedAt: string }[];
   onboardingCompleted: boolean;
 }

@@ -1,4 +1,4 @@
-import { StorageSchema, Customer, Job, BusinessProfile, Estimate, EstimateTemplate, EstimateAssembly, Invoice, Payment, SavedView } from '@/domain/types';
+import { StorageSchema, Customer, Job, BusinessProfile, Estimate, EstimateTemplate, EstimateAssembly, Invoice, Payment, SavedView, PricingItem, PricingCategory } from '@/domain/types';
 import { seedData } from './seedData';
 
 const STORAGE_KEY = 'allens_contractors_data';
@@ -18,6 +18,7 @@ const DEFAULT_DATA: StorageSchema = {
   jobNotes: [],
   jobProgress: [],
   savedViews: [],
+  pricing: [],
   viewedItems: [],
   onboardingCompleted: false,
   settings: {
@@ -207,6 +208,53 @@ export const storageService = {
   setOnboardingCompleted(completed: boolean) {
     const data = this.getData();
     data.onboardingCompleted = completed;
+    this.saveData(data);
+  },
+
+  getPricing(category?: PricingCategory) {
+    const items = this.getCollection('pricing') as PricingItem[];
+    if (category) return items.filter(i => i.category === category);
+    return items;
+  },
+
+  getActivePricing(category?: PricingCategory) {
+    const items = this.getPricing(category);
+    return items.filter(i => i.isActive);
+  },
+
+  savePricingItem(item: Partial<PricingItem>) {
+    const data = this.getData();
+    const items = data.pricing || [];
+    const index = items.findIndex(i => i.id === item.id);
+
+    if (index !== -1) {
+      items[index] = { ...items[index], ...item, updatedAt: new Date().toISOString() };
+    } else {
+      const newItem: PricingItem = {
+        id: item.id || crypto.randomUUID(),
+        name: item.name || '',
+        description: item.description,
+        category: item.category || 'misc',
+        unit: item.unit || 'each',
+        unitCost: item.unitCost || 0,
+        sellPrice: item.sellPrice || 0,
+        markup: item.markup || 0,
+        isActive: item.isActive !== undefined ? item.isActive : true,
+        notes: item.notes,
+        createdAt: item.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      items.push(newItem);
+    }
+
+    data.pricing = items;
+    this.saveData(data);
+    return item;
+  },
+
+  deletePricingItem(id: string) {
+    const data = this.getData();
+    data.pricing = (data.pricing || []).filter(i => i.id !== id);
     this.saveData(data);
   }
 };

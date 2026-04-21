@@ -13,7 +13,8 @@ import {
   TrendingUp,
   Calendar,
   Sun,
-  Moon
+  Moon,
+  DollarSign
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { storageService } from '@/lib/storage/storageService';
@@ -23,6 +24,7 @@ const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/customers', label: 'Customers', icon: Users },
   { href: '/jobs', label: 'Projects', icon: Briefcase },
+  { href: '/pricing', label: 'Pricing', icon: DollarSign },
   { href: '/estimates', label: 'Estimates', icon: FileText },
   { href: '/invoices', label: 'Invoices', icon: Receipt },
   { href: '/expenses', label: 'Expenses', icon: Receipt },

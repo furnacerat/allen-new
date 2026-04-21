@@ -72,6 +72,7 @@ export const seedData: StorageSchema = {
   jobNotes: [],
   jobProgress: [],
   savedViews: [],
+  pricing: [],
   viewedItems: [],
   onboardingCompleted: false,
   settings: {
