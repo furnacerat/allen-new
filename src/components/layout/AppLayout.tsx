@@ -1,12 +1,10 @@
 'use client';
+import { useEffect, useState } from 'react';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
-
-import { LogoPlaceholder } from '@/components/ui/LogoPlaceholder';
 import { storageService } from '@/lib/storage/storageService';
-import { useEffect, useState } from 'react';
-import { OnboardingFlow, useOnboardingCheck } from './OnboardingFlow';
+import { OnboardingFlow } from './OnboardingFlow';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [businessName, setBusinessName] = useState("Allen's Contractors");
@@ -20,8 +18,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     setOnboardingComplete(storageService.getOnboardingCompleted());
   }, []);
 
+  // Check for theme preference
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  }, []);
+
   if (onboardingComplete === null) {
-    return null;
+    return (
+      <div className="min-h-screen bg-[var(--bg-app)] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
 
   return (
@@ -31,16 +41,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <OnboardingFlow />
         ) : (
           <>
+            {/* Desktop Sidebar */}
             <Sidebar />
-            <main className="flex-1 flex flex-col pb-[calc(var(--bottom-nav-height)+40px)] md:pb-0">
-              <header className="md:hidden flex items-center justify-between px-6 h-[var(--header-height)] bg-[var(--bg-card)] border-b border-[var(--border-subtle)] sticky top-0 z-40">
-                <span className="text-lg font-bold text-[var(--primary)]">{businessName}</span>
-                <LogoPlaceholder name={businessName} size="sm" />
+            
+            {/* Main Content Area */}
+            <main className="flex-1 flex flex-col">
+              {/* Mobile Header */}
+              <header className="md:hidden flex items-center justify-between px-5 py-4 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] sticky top-0 z-40">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-[var(--primary)] rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                    {businessName.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="font-bold text-[var(--text-main)]">{businessName}</span>
+                </div>
               </header>
-              <div className="flex-1 p-4 md:p-8 max-w-[1600px] mx-auto w-full">
+              
+              {/* Page Content */}
+              <div className="flex-1 p-5 md:p-8 lg:p-10 max-w-[1800px] mx-auto w-full animate-in">
                 {children}
               </div>
             </main>
+            
+            {/* Mobile Navigation */}
             <MobileNav />
           </>
         )}

@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Card, Button, Badge, ListSkeleton } from '@/components/ui';
+import { Card, Button, Badge, ListSkeleton, PageHeader, EmptyState } from '@/components/ui';
 import { 
   Briefcase, 
   Search, 
@@ -56,11 +56,11 @@ export default function JobsPage() {
 
   if (isLoading) {
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in">
       <div className="flex justify-between">
         <div className="space-y-2">
-          <div className="h-9 w-48 bg-[var(--border-subtle)] rounded animate-pulse" />
-          <div className="h-5 w-72 bg-[var(--border-subtle)] rounded animate-pulse" />
+          <div className="h-9 w-32 bg-[var(--border-subtle)] rounded animate-pulse" />
+          <div className="h-5 w-56 bg-[var(--border-subtle)] rounded animate-pulse" />
         </div>
       </div>
       <div className="h-12 bg-[var(--border-subtle)] rounded animate-pulse" />
@@ -70,27 +70,27 @@ export default function JobsPage() {
 }
 
 return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Jobs & Projects</h1>
-          <p className="text-[var(--text-muted)]">Track all your active and upcoming construction projects.</p>
-        </div>
-        <Link href="/jobs/new">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            New Project
-          </Button>
-        </Link>
-      </header>
+    <div className="space-y-6 animate-in">
+      <PageHeader
+        title="Projects"
+        description="Track all your active and upcoming construction projects."
+        action={
+          <Link href="/jobs/new">
+            <Button>
+              <Plus size={18} />
+              New Project
+            </Button>
+          </Link>
+        }
+      />
 
-      <div className="flex flex-col md:flex-row items-center gap-4 bg-[var(--bg-card)] p-4 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] shadow-[var(--shadow-sm)]">
+      <div className="flex flex-col md:flex-row items-center gap-4 bg-[var(--bg-card)] p-4 rounded-[var(--radius-xl)] border border-[var(--border-subtle)] shadow-[var(--shadow-card)]">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={18} />
           <input 
             type="text"
             placeholder="Search jobs, customers, or addresses..."
-            className="w-full bg-transparent border-none focus:ring-0 text-sm pl-10 pr-4 h-10"
+            className="w-full bg-transparent border-none focus:ring-0 text-sm pl-10 pr-4 h-11"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -98,7 +98,7 @@ return (
         <div className="flex items-center gap-2 w-full md:w-auto">
           <Filter size={18} className="text-[var(--text-muted)]" />
           <select 
-            className="bg-transparent border-none text-sm focus:ring-0 h-10 cursor-pointer"
+            className="bg-transparent border-none text-sm focus:ring-0 h-11 cursor-pointer"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -114,55 +114,55 @@ return (
       </div>
 
       {filteredJobs.length === 0 ? (
-        <Card className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-20 h-20 bg-[var(--primary-subtle)] rounded-full flex items-center justify-center text-[var(--primary)] mb-6">
-            <Briefcase size={40} />
-          </div>
-          <h2 className="text-xl font-semibold">No jobs found</h2>
-          <p className="text-[var(--text-muted)] max-w-xs mx-auto mt-2">
-            {searchQuery ? "We couldn't find any projects matching your search." : "You haven't added any jobs yet. Start by creating a project for a customer."}
-          </p>
-          {!searchQuery && (
-            <Link href="/jobs/new" className="mt-8">
-              <Button>Create First Job</Button>
-            </Link>
-          )}
+        <Card className="py-12">
+          <EmptyState
+            icon={<Briefcase size={32} />}
+            title={searchQuery ? "No projects found" : "No projects yet"}
+            description={searchQuery ? "We couldn't find any projects matching your search." : "Start by creating your first project for a customer."}
+            action={
+              !searchQuery && (
+                <Link href="/jobs/new">
+                  <Button>Create First Project</Button>
+                </Link>
+              )
+            }
+          />
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {filteredJobs.map((job) => (
             <Link key={job.id} href={`/jobs/${job.id}`}>
-              <Card className="group hover:border-[var(--primary)] transition-all cursor-pointer py-4">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    <div className="hidden sm:flex w-12 h-12 rounded-xl bg-[var(--primary-subtle)] text-[var(--primary)] items-center justify-center shrink-0">
-                      <Briefcase size={24} />
+              <Card className="group hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer" hover padding={false}>
+                <div className="flex items-center justify-between p-4 lg:p-5">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="hidden sm:flex w-11 h-11 rounded-xl bg-[var(--primary-subtle)] text-[var(--primary)] items-center justify-center shrink-0">
+                      <Briefcase size={20} />
                     </div>
-                    <div className="space-y-1">
-                      <h3 className="font-bold text-lg group-hover:text-[var(--primary)] transition-colors">{job.title}</h3>
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[var(--text-muted)]">
-                        <div className="flex items-center gap-1">
-                          <User size={14} className="text-[var(--primary)]" />
-                          <span>{job.customerName}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <MapPin size={14} className="text-[var(--primary)]" />
-                          <span>{job.siteAddress}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock size={14} className="text-[var(--primary)]" />
-                          <span>Target: {job.targetStartDate || 'TBD'}</span>
-                        </div>
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-[var(--text-main)] group-hover:text-[var(--primary)] transition-colors">
+                        {job.title}
+                      </h3>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[var(--text-muted)] mt-1">
+                        <span className="flex items-center gap-1">
+                          <User size={14} />
+                          {job.customerName}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MapPin size={14} />
+                          {job.siteAddress}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock size={14} />
+                          {job.targetStartDate || 'TBD'}
+                        </span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between md:justify-end gap-4 border-t md:border-none pt-4 md:pt-0">
+                  <div className="flex items-center gap-3 shrink-0">
                     <Badge variant={getStatusVariant(job.status)}>
                       {job.status}
                     </Badge>
-                    <div className="text-[var(--text-muted)] md:block hidden">
-                      <ChevronRight size={20} />
-                    </div>
+                    <ChevronRight size={18} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors" />
                   </div>
                 </div>
               </Card>

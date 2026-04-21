@@ -5,44 +5,78 @@ import {
   LayoutDashboard, 
   Users, 
   Briefcase, 
-  FileText, 
-  Menu
+  FileText,
+  Receipt,
+  Calendar,
+  Settings,
+  Plus
 } from 'lucide-react';
 
 const mobileNavItems = [
-  { href: '/', label: 'Dash', icon: LayoutDashboard },
-  { href: '/customers', label: 'People', icon: Users },
+  { href: '/', label: 'Home', icon: LayoutDashboard },
+  { href: '/customers', label: 'Customers', icon: Users },
   { href: '/jobs', label: 'Jobs', icon: Briefcase },
   { href: '/estimates', label: 'Estimates', icon: FileText },
+  { href: '/invoices', label: 'Invoices', icon: Receipt },
+];
+
+const bottomNavItems = [
+  { href: '/schedule', label: 'Schedule', icon: Calendar },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[var(--bottom-nav-height)] bg-[var(--bg-card)] border-t border-[var(--border-subtle)] flex items-center justify-around px-2 z-50">
-      {mobileNavItems.map((item) => {
-        const isActive = pathname === item.href;
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex flex-col items-center gap-1 transition-colors ${
-              isActive ? 'text-[var(--primary)]' : 'text-[var(--text-muted)]'
-            }`}
-          >
-            <item.icon size={22} fill={isActive ? 'var(--primary)' : 'none'} style={{ fillOpacity: 0.1 }} />
-            <span className="text-[10px] font-medium uppercase tracking-wider">{item.label}</span>
-          </Link>
-        );
-      })}
-      <Link
-        href="/menu"
-        className="flex flex-col items-center gap-1 text-[var(--text-muted)] hover:text-[var(--primary)]"
-      >
-        <Menu size={22} />
-        <span className="text-[10px] font-medium uppercase tracking-wider">More</span>
-      </Link>
-    </nav>
+    <>
+      {/* Mobile Header */}
+      <header className="md:hidden fixed top-0 left-0 right-0 h-[var(--header-height)] bg-[var(--bg-card)] border-b border-[var(--border-subtle)] flex items-center justify-between px-4 z-40">
+        <Link href="/" className="text-lg font-bold text-[var(--primary)]">
+          AC
+        </Link>
+        <Link 
+          href="/jobs/new"
+          className="w-9 h-9 bg-[var(--primary)] text-white rounded-full flex items-center justify-center shadow-lg"
+        >
+          <Plus size={20} />
+        </Link>
+      </header>
+
+      {/* Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[var(--bg-card)] border-t border-[var(--border-subtle)] flex items-center justify-around px-2 py-2 z-50 safe-area-bottom">
+        {mobileNavItems.map((item) => {
+          const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`
+                flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition-all duration-150
+                ${isActive 
+                  ? 'text-[var(--primary)]' 
+                  : 'text-[var(--text-muted)]'
+                }
+              `}
+            >
+              <div className={`
+                p-1.5 rounded-lg transition-all duration-150
+                ${isActive ? 'bg-[var(--primary-subtle)]' : ''}
+              `}>
+                <item.icon size={20} strokeWidth={isActive ? 2 : 1.5} />
+              </div>
+              <span className="text-[10px] font-medium">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Floating Action Button Area - Used by QuickAddMenu */}
+      <style jsx>{`
+        .safe-area-bottom {
+          padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+      `}</style>
+    </>
   );
 }

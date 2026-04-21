@@ -3,17 +3,71 @@
 
 @theme {
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-subtle: var(--primary-subtle);
   --color-secondary: var(--secondary);
   --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
   --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
   --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
   --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+  
+  --color-bg-app: var(--bg-app);
+  --color-bg-card: var(--bg-card);
+  --color-bg-elevated: var(--bg-elevated);
+  
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+  --color-text-secondary: var(--text-secondary);
+  
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  
+  --radius-radius-sm: var(--radius-sm);
+  --radius-radius-md: var(--radius-md);
+  --radius-radius-lg: var(--radius-lg);
+  --radius-radius-xl: var(--radius-xl);
+  --radius-radius-full: var(--radius-full);
+  
+  --shadow-shadow-sm: var(--shadow-sm);
+  --shadow-shadow-md: var(--shadow-md);
+  --shadow-shadow-lg: var(--shadow-lg);
+  --shadow-shadow-xl: var(--shadow-xl);
 }
 
+/* Base Layer */
 @layer base {
   body {
     background-color: var(--bg-app);
     color: var(--text-main);
-    font-family: var(--font-inter), sans-serif;
+    font-family: var(--font-body), sans-serif;
+  }
+}
+
+/* Animated utilities */
+@layer utilities {
+  .animate-in {
+    animation: fadeSlideIn var(--transition-base) ease-out forwards;
+  }
+  
+  .stagger-1 { animation-delay: 50ms; }
+  .stagger-2 { animation-delay: 100ms; }
+  .stagger-3 { animation-delay: 150ms; }
+  .stagger-4 { animation-delay: 200ms; }
+  .stagger-5 { animation-delay: 250ms; }
+}
+
+/* Global animations */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

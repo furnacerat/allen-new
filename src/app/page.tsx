@@ -1,26 +1,25 @@
 'use client';
-import { Card, Button, Badge } from '@/components/ui';
+import { Card, Button, Badge, PageHeader, EmptyState } from '@/components/ui';
 import { 
   Users, 
   Briefcase, 
   TrendingUp, 
-  AlertCircle,
   Plus,
   ArrowUpRight,
-  Clock,
   MapPin,
-  Calendar,
+  Clock,
   ChevronRight,
   FileText,
   Receipt,
-  BarChart3
+  BarChart3,
+  Calendar,
+  Sparkles
 } from 'lucide-react';
 import { storageService } from '@/lib/storage/storageService';
 import { useEffect, useState } from 'react';
 import { Job, Customer, BusinessProfile } from '@/domain/types';
 import Link from 'next/link';
 import { reportService } from '@/lib/reports/reportService';
-import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 
 export default function Dashboard() {
   const [data, setData] = useState<{
@@ -29,6 +28,8 @@ export default function Dashboard() {
     settings: BusinessProfile
   } | null>(null);
 
+  const [businessHealth, setBusinessHealth] = useState<any>(null);
+
   useEffect(() => {
     setData({
       jobs: storageService.getJobs(),
@@ -36,156 +37,229 @@ export default function Dashboard() {
       settings: storageService.getSettings()
     });
     setBusinessHealth(reportService.getBusinessKPIs());
-    setRecentTrends(reportService.getFinancialTrends(6));
   }, []);
-
-  const [businessHealth, setBusinessHealth] = useState<any>(null);
-  const [recentTrends, setRecentTrends] = useState<any[]>([]);
 
   if (!data) return null;
 
   const { jobs, customers, settings } = data;
 
+  const activeProjects = jobs.filter(j => j.status === 'in progress').length;
+  const totalRevenue = businessHealth?.grossProfit || 0;
+
   const kpis = [
-    { label: 'Network', title: 'Customers', value: customers.length, icon: Users, color: 'var(--primary)' },
-    { label: 'Active', title: 'Projects', value: jobs.filter(j => j.status === 'in progress').length, icon: Briefcase, color: 'var(--success)' },
-    { label: 'Profit', title: 'Gross Profit', value: businessHealth ? `$${(businessHealth.grossProfit / 1000).toFixed(1)}k` : '...', icon: TrendingUp, color: 'var(--info)' },
-    { label: 'Efficiency', title: 'Avg Margin', value: businessHealth ? `${businessHealth.avgMargin}%` : '...', icon: ArrowUpRight, color: 'var(--warning)' },
+    { 
+      label: 'Total', 
+      title: 'Customers', 
+      value: customers.length, 
+      icon: Users, 
+      color: 'var(--primary)',
+      bg: 'var(--primary-subtle)'
+    },
+    { 
+      label: 'Active', 
+      title: 'Projects', 
+      value: activeProjects, 
+      icon: Briefcase, 
+      color: 'var(--success)',
+      bg: 'var(--success-subtle)'
+    },
+    { 
+      label: 'Revenue', 
+      title: 'Gross Profit', 
+      value: `$${(totalRevenue / 1000).toFixed(1)}k`, 
+      icon: TrendingUp, 
+      color: 'var(--info)',
+      bg: 'var(--info-bg)'
+    },
+    { 
+      label: 'Current', 
+      title: 'Avg Margin', 
+      value: `${businessHealth?.avgMargin || 0}%`, 
+      icon: ArrowUpRight, 
+      color: 'var(--warning)',
+      bg: 'var(--warning-subtle)'
+    },
   ];
 
-  const recentJobs = [...jobs].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5);
+  const recentJobs = [...jobs]
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    .slice(0, 5);
+
+  const getTimeGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Morning';
+    if (hour < 17) return 'Afternoon';
+    return 'Evening';
+  };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[var(--text-main)]">
-            Morning, {settings.businessName.split("'")[0]}
-          </h1>
-          <p className="text-[var(--text-muted)]">Here's what's happening across your projects today.</p>
-        </div>
-        <div className="flex items-center gap-3">
+    <div className="space-y-8 animate-in">
+      {/* Page Header */}
+      <PageHeader
+        title={`${getTimeGreeting()}, ${settings.businessName.split("'")[0]}`}
+        description="Here's what's happening with your business today."
+        action={
           <Link href="/jobs/new">
-            <Button size="sm">
-              <Plus className="mr-2 h-4 w-4" />
-              New Job
+            <Button>
+              <Plus size={18} />
+              New Project
             </Button>
           </Link>
-        </div>
-      </header>
+        }
+      />
 
-      {/* KPI Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {kpis.map((kpi) => (
-          <Card key={kpi.title} className="hover:border-[var(--primary)] transition-all cursor-default group border-b-4" style={{ borderBottomColor: kpi.color }}>
+      {/* KPI Cards Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        {kpis.map((kpi, idx) => (
+          <Card 
+            key={kpi.title} 
+            className="hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-default"
+            hover
+          >
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1">
                   {kpi.label}
                 </p>
-                <h3 className="text-sm font-semibold text-[var(--text-muted)] mb-1">{kpi.title}</h3>
-                <div className="text-3xl font-bold">{kpi.value}</div>
+                <div className="text-2xl lg:text-3xl font-bold text-[var(--text-main)] tracking-tight">
+                  {kpi.value}
+                </div>
+                <p className="text-sm text-[var(--text-tertiary)] mt-1">{kpi.title}</p>
               </div>
               <div 
-                className="p-3 rounded-2xl transition-all group-hover:scale-110 duration-300"
-                style={{ backgroundColor: `${kpi.color}10`, color: kpi.color }}
+                className="p-2.5 lg:p-3 rounded-xl"
+                style={{ backgroundColor: kpi.bg, color: kpi.color }}
               >
-                <kpi.icon size={24} />
+                <kpi.icon size={20} strokeWidth={2} />
               </div>
             </div>
           </Card>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Recent Jobs */}
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+        {/* Recent Projects - Takes 2/3 width */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between px-2">
-            <h2 className="text-xl font-bold">Recent Projects</h2>
-            <Link href="/jobs" className="text-sm font-medium text-[var(--primary)] hover:underline">View All</Link>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-[var(--text-main)]">Recent Projects</h2>
+            <Link href="/jobs" className="text-sm font-medium text-[var(--primary)] hover:underline">
+              View All
+            </Link>
           </div>
-          <Card className="p-0">
-            {recentJobs.length === 0 ? (
-              <div className="py-20 text-center">
-                <p className="text-[var(--text-muted)]">No projects tracked yet.</p>
-              </div>
-            ) : (
+          
+          {recentJobs.length === 0 ? (
+            <Card className="py-12">
+              <EmptyState
+                icon={<Briefcase size={32} />}
+                title="No projects yet"
+                description="Create your first project to start tracking jobs and estimating costs."
+                action={
+                  <Link href="/jobs/new">
+                    <Button>Create First Project</Button>
+                  </Link>
+                }
+              />
+            </Card>
+          ) : (
+            <Card className="p-0" padding={false}>
               <div className="divide-y divide-[var(--border-subtle)]">
-                {recentJobs.map(job => (
-                  <Link key={job.id} href={`/jobs/${job.id}`} className="block hover:bg-[var(--primary-subtle)] transition-colors p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <div className="font-bold flex items-center gap-2">
-                          {job.title}
-                          <Badge variant={job.status === 'in progress' ? 'success' : 'info'}>{job.status}</Badge>
-                        </div>
-                        <div className="flex items-center gap-4 text-xs text-[var(--text-muted)]">
-                          <span className="flex items-center gap-1"><MapPin size={12} /> {job.siteAddress}</span>
-                          <span className="flex items-center gap-1"><Clock size={12} /> {new Date(job.updatedAt).toLocaleDateString()}</span>
+                {recentJobs.map((job) => (
+                  <Link 
+                    key={job.id} 
+                    href={`/jobs/${job.id}`} 
+                    className="flex items-center justify-between p-4 lg:p-5 hover:bg-[var(--primary-subtle)] transition-colors group"
+                  >
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-[var(--primary-subtle)] text-[var(--primary)] flex items-center justify-center shrink-0">
+                        <Briefcase size={20} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-[var(--text-main)] truncate">{job.title}</div>
+                        <div className="flex items-center gap-3 text-xs text-[var(--text-muted)] mt-1">
+                          <span className="flex items-center gap-1">
+                            <MapPin size={12} />
+                            {job.siteAddress || 'No address'}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock size={12} />
+                            {new Date(job.updatedAt).toLocaleDateString()}
+                          </span>
                         </div>
                       </div>
-                      <ChevronRight size={20} className="text-[var(--text-muted)]" />
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <Badge variant={job.status === 'in progress' ? 'success' : job.status === 'lead' ? 'lead' : 'info'}>
+                        {job.status}
+                      </Badge>
+                      <ChevronRight size={18} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors" />
                     </div>
                   </Link>
                 ))}
               </div>
-            )}
-          </Card>
+            </Card>
+          )}
         </div>
 
-        {/* Business Overview Sidebar */}
-        <div className="space-y-8">
-          <Card title="Quick Actions">
-            <div className="grid grid-cols-2 gap-3">
-              <Link href="/customers/new" className="col-span-2">
-                <Button variant="outline" className="w-full justify-start h-12">
-                  <Users className="mr-3 h-4 w-4 text-[var(--primary)]" />
-                  Add Customer
+        {/* Sidebar - Takes 1/3 width */}
+        <div className="space-y-6">
+          {/* Quick Actions */}
+          <Card title="Quick Actions" subtitle="Start new work">
+            <div className="space-y-2">
+              <Link href="/customers/new">
+                <Button variant="outline" className="w-full justify-start h-11">
+                  <Users size={18} />
+                  <span className="ml-2">Add Customer</span>
                 </Button>
               </Link>
-              <Link href="/jobs/new" className="col-span-2">
-                <Button variant="outline" className="w-full justify-start h-12">
-                  <Briefcase className="mr-3 h-4 w-4 text-[var(--primary)]" />
-                  Create Project
+              <Link href="/jobs/new">
+                <Button variant="outline" className="w-full justify-start h-11">
+                  <Briefcase size={18} />
+                  <span className="ml-2">New Project</span>
                 </Button>
               </Link>
-              <Link href="/estimates/new" className="col-span-2">
-                <Button variant="outline" className="w-full justify-start h-12">
-                  <FileText className="mr-3 h-4 w-4 text-[var(--primary)]" />
-                  New Estimate
+              <Link href="/estimates/new">
+                <Button variant="outline" className="w-full justify-start h-11">
+                  <FileText size={18} />
+                  <span className="ml-2">Create Estimate</span>
                 </Button>
               </Link>
-              <Link href="/invoices/new" className="col-span-2">
-                <Button variant="outline" className="w-full justify-start h-12">
-                  <Receipt className="mr-3 h-4 w-4 text-[var(--primary)]" />
-                  New Invoice
+              <Link href="/invoices/new">
+                <Button variant="outline" className="w-full justify-start h-11">
+                  <Receipt size={18} />
+                  <span className="ml-2">Send Invoice</span>
                 </Button>
               </Link>
-              <Link href="/reports" className="col-span-2">
-                <Button variant="outline" className="w-full justify-start h-12 bg-indigo-50 border-indigo-100 hover:bg-indigo-100 transition-colors">
-                  <BarChart3 className="mr-3 h-4 w-4 text-indigo-600" />
-                  Business Reports
+              <Link href="/reports">
+                <Button variant="outline" className="w-full justify-start h-11">
+                  <BarChart3 size={18} />
+                  <span className="ml-2">Reports</span>
                 </Button>
               </Link>
             </div>
           </Card>
 
-          <Card title="Upcoming Milestones">
-            <div className="space-y-4">
+          {/* Upcoming */}
+          <Card title="Upcoming Starts">
+            <div className="space-y-3">
               {jobs.filter(j => j.targetStartDate).slice(0, 3).map(job => (
-                <div key={job.id} className="flex gap-4 items-start">
-                   <div className="w-10 h-10 rounded-xl bg-[var(--primary-subtle)] flex flex-col items-center justify-center text-[var(--primary)] shrink-0">
-                      <span className="text-[10px] font-bold uppercase">{new Date(job.targetStartDate!).toLocaleString('default', { month: 'short' })}</span>
-                      <span className="text-sm font-bold leading-none">{new Date(job.targetStartDate!).getDate()}</span>
-                   </div>
-                   <div className="min-w-0">
-                      <p className="text-sm font-bold truncate">{job.title}</p>
-                      <p className="text-xs text-[var(--text-muted)]">Project Start</p>
-                   </div>
+                <div key={job.id} className="flex gap-3 items-center">
+                  <div className="w-10 h-10 rounded-lg bg-[var(--primary-subtle)] flex flex-col items-center justify-center text-[var(--primary)] shrink-0">
+                    <span className="text-[9px] font-bold uppercase">
+                      {new Date(job.targetStartDate!).toLocaleString('default', { month: 'short' })}
+                    </span>
+                    <span className="text-sm font-bold leading-none">
+                      {new Date(job.targetStartDate!).getDate()}
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm text-[var(--text-main)] truncate">{job.title}</p>
+                    <p className="text-xs text-[var(--text-muted)]">Start Date</p>
+                  </div>
                 </div>
               ))}
               {jobs.filter(j => j.targetStartDate).length === 0 && (
-                <p className="text-sm text-[var(--text-muted)] italic text-center py-4">No scheduled starts.</p>
+                <p className="text-sm text-[var(--text-muted)] text-center py-4">No upcoming starts scheduled.</p>
               )}
             </div>
           </Card>
