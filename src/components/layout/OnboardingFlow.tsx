@@ -62,7 +62,7 @@ export function OnboardingFlow() {
   const handleNext = async () => {
     if (step === STEPS.length - 1) {
       storageService.setOnboardingCompleted(true);
-      router.push('/');
+      window.location.href = '/';
       return;
     }
     setStep(step + 1);
@@ -75,7 +75,7 @@ export function OnboardingFlow() {
 
   const handleSkip = () => {
     storageService.setOnboardingCompleted(true);
-    router.push('/');
+    window.location.href = '/';
   };
 
   const handleSave = async () => {
@@ -123,7 +123,7 @@ export function OnboardingFlow() {
 
     storageService.setOnboardingCompleted(true);
     showToast('Business setup complete!', 'success');
-    router.push('/');
+    window.location.href = '/';
   };
 
   const Icon = currentStep.icon;
