@@ -56,6 +56,8 @@ export const seedData: StorageSchema = {
     }
   ],
   estimates: [],
+  estimateTemplates: [],
+  estimateAssemblies: [],
   expenses: [],
   invoices: [],
   settings: {

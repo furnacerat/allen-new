@@ -1,4 +1,5 @@
 export type JobStatus = 'lead' | 'estimating' | 'approved' | 'in progress' | 'on hold' | 'completed' | 'archived';
+
 export type JobType = 
   | 'remodel' | 'flip' | 'new_build' | 'addition' | 'repair' 
   | 'kitchen_remodel' | 'bath_remodel' | 'basement' | 'plumbing' 
@@ -6,13 +7,10 @@ export type JobType =
   | 'flooring' | 'deck_patio' | 'landscaping' | 'windows' 
   | 'drywall' | 'fencing' | 'concrete' | 'demolition' | 'masonry' 
   | 'waterproofing' | 'cabinetry' | 'tile' | 'other';
-export type TaskStatus = 'open' | 'in_progress' | 'blocked' | 'done';
-export type ExpenseCategory = 'materials' | 'permits' | 'dump_fees' | 'fuel' | 'rental' | 'subcontractor' | 'equipment' | 'misc';
-export type PaymentSource = 'company_card' | 'cash' | 'check' | 'finance' | 'credit' | 'other';
-export type InvoiceType = 'deposit' | 'progress' | 'final' | 'change_order';
-export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'partial' | 'overdue';
-export type PaymentMethod = 'cash' | 'check' | 'ach' | 'card' | 'other';
-export type Priority = 'low' | 'medium' | 'high' | 'urgent';
+
+export type EstimateStatus = 'draft' | 'sent' | 'approved' | 'rejected' | 'converted';
+
+export type LineItemType = 'labor' | 'material' | 'subcontractor' | 'equipment' | 'misc';
 
 export interface Customer {
   id: string;
@@ -45,6 +43,58 @@ export interface Job {
   updatedAt: string;
 }
 
+export interface EstimateLineItem {
+  id: string;
+  name: string;
+  description?: string;
+  type: LineItemType;
+  quantity: number;
+  unit: string; // e.g. 'hr', 'sqft', 'ea'
+  unitCost: number;
+  markup: number; // percentage (e.g. 20 for 20%)
+  taxable: boolean;
+  total: number;
+}
+
+export interface Estimate {
+  id: string;
+  estimateNumber: string;
+  customerId: string;
+  jobId?: string; // Optional link to a pre-existing job/lead
+  status: EstimateStatus;
+  issueDate: string;
+  expiryDate?: string;
+  scopeSummary?: string;
+  internalNotes?: string;
+  customerNotes?: string;
+  termsConditions?: string;
+  items: EstimateLineItem[];
+  subtotal: number;
+  taxRate: number; // percentage
+  taxTotal: number;
+  total: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EstimateTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  items: EstimateLineItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EstimateAssembly {
+  id: string;
+  name: string;
+  description?: string;
+  items: EstimateLineItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface BusinessProfile {
   businessName: string;
   logoUrl?: string;
@@ -60,14 +110,10 @@ export interface BusinessProfile {
 export interface StorageSchema {
   customers: Customer[];
   jobs: Job[];
+  estimates: Estimate[];
+  estimateTemplates: EstimateTemplate[];
+  estimateAssemblies: EstimateAssembly[];
   settings: BusinessProfile;
-  // Prepared for future phases
-  estimates: any[];
   expenses: any[];
   invoices: any[];
-}
-
-export interface AuditMetadata {
-  createdAt: string;
-  updatedAt: string;
 }
